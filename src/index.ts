@@ -7,6 +7,7 @@ import z from "zod";
 import { markTodoCompleted } from "./todo/markTodoCompleted";
 import { markTodoUncompleted } from "./todo/markTodoUncompleted";
 import { deleteTodo } from "./todo/deleteTodo";
+import { listTodos } from "./todo/listTodos";
 
 const app = express();
 
@@ -35,6 +36,16 @@ app.use(express.json());
       }
     } else {
       return res.status(422).json(input.error);
+    }
+  });
+
+  app.get("/todos", async (_req, res) => {
+    try {
+      const result = await listTodos();
+      return res.json(result);
+    } catch (e) {
+      console.log(e);
+      return res.status(500).end();
     }
   });
 
