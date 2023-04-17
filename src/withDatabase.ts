@@ -1,12 +1,14 @@
-import { DataTypes, Model, ModelStatic, Sequelize } from "sequelize";
+import { Model, ModelStatic, Sequelize } from "sequelize";
+import { Todo, TodoInput, makeSequelizeTodoModel } from "./todo/model";
 
-interface Todo {
-  content: string;
-  isDone: boolean;
+export interface Row {
+  id: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface DatabaseContext {
-  todo: ModelStatic<Model<Todo>>;
+  todo: ModelStatic<Model<Todo, TodoInput>>;
 }
 
 let context: DatabaseContext | null = null;
@@ -25,7 +27,9 @@ export async function withDatabase<T>(
             storage: "data/db.sqlite",
           });
         default:
-          return new Sequelize("sqlite::memory:");
+          return new Sequelize("sqlite::memory:", {
+            logging: false,
+          });
       }
     })();
 
@@ -38,17 +42,10 @@ export async function withDatabase<T>(
     }
 
     context = {
-      todo: sequelize.define("Todo", {
-        content: {
-          type: DataTypes.TEXT,
-          allowNull: false,
-        },
-        isDone: {
-          type: DataTypes.BOOLEAN,
-          allowNull: false,
-        },
-      }),
+      todo: makeSequelizeTodoModel(sequelize),
     };
+
+    await context.todo.sync({ force: true });
   }
 
   return callback(context);
