@@ -1,13 +1,18 @@
 import express from "express";
 import meta from "../package.json";
+import { withDatabase } from "./withDatabase";
 
 const app = express();
 
-app.get("/", (_req, res) => {
-  res.json({
-    name: meta.name,
-    version: meta.version,
-  });
-});
+(async () => {
+  await withDatabase(() => Promise.resolve());
 
-app.listen(5000, () => console.log("Server ready at port 5000"));
+  app.get("/", (_req, res) => {
+    res.json({
+      name: meta.name,
+      version: meta.version,
+    });
+  });
+
+  app.listen(5000, () => console.log("Server ready at port 5000"));
+})();

@@ -2,11 +2,12 @@
   "name": "food-styles-test-api",
   "version": "1.0.0",
   "description": "",
-  "main": "build/index.js",
+  "main": "build/src/index.js",
   "scripts": {
-    "start": "nodemon ./src/index.ts",
+    "start": "NODE_ENV=development nodemon ./src/index.ts",
     "build": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "serve": "NODE_ENV=production node ."
   },
   "keywords": [],
   "author": "",
@@ -24,6 +25,8 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "sequelize": "^6.31.0",
+    "sqlite3": "^5.1.6"
   }
 }
