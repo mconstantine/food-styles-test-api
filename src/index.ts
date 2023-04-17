@@ -7,7 +7,7 @@ import z from "zod";
 import { markTodoCompleted } from "./todo/markTodoCompleted";
 import { markTodoUncompleted } from "./todo/markTodoUncompleted";
 import { deleteTodo } from "./todo/deleteTodo";
-import { listTodos } from "./todo/listTodos";
+import { ListTodosFilter, listTodos } from "./todo/listTodos";
 import { makeEndpoint } from "./utils/makeEndpoint";
 import cors from "cors";
 
@@ -31,14 +31,9 @@ app.use(cors());
     return makeEndpoint(input, res, (input) => createTodo(input.title));
   });
 
-  app.get("/todos", async (_req, res) => {
-    try {
-      const result = await listTodos();
-      return res.json(result);
-    } catch (e) {
-      console.log(e);
-      return res.status(500).end();
-    }
+  app.get("/todos", async (req, res) => {
+    const input = ListTodosFilter.safeParse(req.query);
+    return makeEndpoint(input, res, (input) => listTodos(input.filter));
   });
 
   app.put("/todos/:id/mark-completed", (req, res) => {
