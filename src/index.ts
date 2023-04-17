@@ -3,6 +3,8 @@ import meta from "../package.json";
 import { withDatabase } from "./withDatabase";
 import { TodoInput } from "./todo/model";
 import { createTodo } from "./todo/createTodo";
+import z from "zod";
+import { markTodoCompleted } from "./todo/markTodoCompleted";
 
 const app = express();
 
@@ -19,18 +21,34 @@ app.use(express.json());
   });
 
   app.post("/todos", async (req, res) => {
-    const data = TodoInput.safeParse(req.body);
+    const input = TodoInput.safeParse(req.body);
 
-    if (data.success) {
+    if (input.success) {
       try {
-        const todo = await createTodo(data.data.title);
+        const todo = await createTodo(input.data.title);
         return res.json(todo);
       } catch (e) {
         console.log(e);
         return res.status(500).end();
       }
     } else {
-      return res.status(422).json(data.error);
+      return res.status(422).json(input.error);
+    }
+  });
+
+  app.put("/todos/:id/mark-completed", async (req, res) => {
+    const id = z.coerce.number().int().min(1).safeParse(req.params.id);
+
+    if (id.success) {
+      try {
+        const result = await markTodoCompleted(id.data);
+        return res.json(result);
+      } catch (e) {
+        console.log(e);
+        return res.status(404).end();
+      }
+    } else {
+      return res.status(422).json(id.error);
     }
   });
 
