@@ -8,7 +8,7 @@ import { markTodoCompleted } from "./todo/markTodoCompleted";
 import { markTodoUncompleted } from "./todo/markTodoUncompleted";
 import { deleteTodo } from "./todo/deleteTodo";
 import { listTodos } from "./todo/listTodos";
-import { ServerError } from "./ServerError";
+import { makeEndpoint } from "./utils/makeEndpoint";
 
 const app = express();
 
@@ -18,26 +18,15 @@ app.use(express.json());
   await withDatabase(() => Promise.resolve());
 
   app.get("/", (_req, res) => {
-    res.json({
+    return res.json({
       name: meta.name,
       version: meta.version,
     });
   });
 
-  app.post("/todos", async (req, res) => {
+  app.post("/todos", (req, res) => {
     const input = TodoInput.safeParse(req.body);
-
-    if (input.success) {
-      try {
-        const todo = await createTodo(input.data.title);
-        return res.json(todo);
-      } catch (e) {
-        console.log(e);
-        return res.status(500).end();
-      }
-    } else {
-      return res.status(422).json(input.error);
-    }
+    return makeEndpoint(input, res, (input) => createTodo(input.title));
   });
 
   app.get("/todos", async (_req, res) => {
@@ -50,67 +39,19 @@ app.use(express.json());
     }
   });
 
-  app.put("/todos/:id/mark-completed", async (req, res) => {
+  app.put("/todos/:id/mark-completed", (req, res) => {
     const id = z.coerce.number().int().min(1).safeParse(req.params.id);
-
-    if (id.success) {
-      try {
-        const result = await markTodoCompleted(id.data);
-        return res.json(result);
-      } catch (e) {
-        console.log(e);
-
-        if (e instanceof ServerError) {
-          return res.status(e.code).end();
-        } else {
-          return res.status(500).end();
-        }
-      }
-    } else {
-      return res.status(422).json(id.error);
-    }
+    return makeEndpoint(id, res, markTodoCompleted);
   });
 
-  app.put("/todos/:id/mark-uncompleted", async (req, res) => {
+  app.put("/todos/:id/mark-uncompleted", (req, res) => {
     const id = z.coerce.number().int().min(1).safeParse(req.params.id);
-
-    if (id.success) {
-      try {
-        const result = await markTodoUncompleted(id.data);
-        return res.json(result);
-      } catch (e) {
-        console.log(e);
-
-        if (e instanceof ServerError) {
-          return res.status(e.code).end();
-        } else {
-          return res.status(500).end();
-        }
-      }
-    } else {
-      return res.status(422).json(id.error);
-    }
+    return makeEndpoint(id, res, markTodoUncompleted);
   });
 
-  app.delete("/todos/:id", async (req, res) => {
+  app.delete("/todos/:id", (req, res) => {
     const id = z.coerce.number().int().min(1).safeParse(req.params.id);
-
-    if (id.success) {
-      try {
-        const result = await deleteTodo(id.data);
-        return res.json(result);
-      } catch (e) {
-        console.log(e);
-
-        if (e instanceof ServerError) {
-          return res.status(e.code).end();
-        } else {
-          return res.status(500).end();
-        }
-      }
-    } else {
-      return res.status(422).json(id.error);
-    }
+    return makeEndpoint(id, res, deleteTodo);
   });
 
   app.listen(5000, () => console.log("Server ready at port 5000"));
