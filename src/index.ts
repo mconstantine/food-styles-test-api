@@ -9,10 +9,12 @@ import { markTodoUncompleted } from "./todo/markTodoUncompleted";
 import { deleteTodo } from "./todo/deleteTodo";
 import { listTodos } from "./todo/listTodos";
 import { makeEndpoint } from "./utils/makeEndpoint";
+import cors from "cors";
 
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 (async () => {
   await withDatabase(() => Promise.resolve());
