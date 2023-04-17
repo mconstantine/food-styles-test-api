@@ -1,15 +1,9 @@
-import { withDatabase } from "../withDatabase";
+import { getTodoOrThrow } from "./getTodoOrThrow";
 import { Todo } from "./model";
 
 export async function markTodoUncompleted(id: number): Promise<Todo> {
-  return withDatabase(async (db) => {
-    const todo = await db.todo.findByPk(id);
+  const todo = await getTodoOrThrow(id);
+  const result = await todo.update({ isDone: false });
 
-    if (!todo) {
-      throw new Error(`Unable to find todo with id: ${id}`);
-    }
-
-    const result = await todo.update({ isDone: false });
-    return result.dataValues;
-  });
+  return result.dataValues;
 }

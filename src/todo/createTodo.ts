@@ -1,10 +1,7 @@
 import { withDatabase } from "../withDatabase";
 import { Todo } from "./model";
 
-export function createTodo(title: string): Promise<Todo> {
-  return withDatabase(async (db) => {
-    const result = await db.todo.create({ title });
-
-    return result.dataValues;
-  });
+export async function createTodo(title: string): Promise<Todo> {
+  const result = await withDatabase((db) => db.todo.create({ title }));
+  return result.dataValues;
 }
