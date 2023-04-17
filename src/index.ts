@@ -5,6 +5,7 @@ import { TodoInput } from "./todo/model";
 import { createTodo } from "./todo/createTodo";
 import z from "zod";
 import { markTodoCompleted } from "./todo/markTodoCompleted";
+import { markTodoUncompleted } from "./todo/markTodoUncompleted";
 
 const app = express();
 
@@ -42,6 +43,22 @@ app.use(express.json());
     if (id.success) {
       try {
         const result = await markTodoCompleted(id.data);
+        return res.json(result);
+      } catch (e) {
+        console.log(e);
+        return res.status(404).end();
+      }
+    } else {
+      return res.status(422).json(id.error);
+    }
+  });
+
+  app.put("/todos/:id/mark-uncompleted", async (req, res) => {
+    const id = z.coerce.number().int().min(1).safeParse(req.params.id);
+
+    if (id.success) {
+      try {
+        const result = await markTodoUncompleted(id.data);
         return res.json(result);
       } catch (e) {
         console.log(e);
