@@ -22,5 +22,8 @@
     "ts-node": "^10.9.1",
     "tsc": "^2.0.4",
     "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
   }
 }
