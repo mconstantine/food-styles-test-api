@@ -23,7 +23,7 @@ export async function listTodos(
 
   const todos = await withDatabase((db) =>
     db.todo.findAll({
-      order: [["updatedAt", "DESC"]],
+      order: [["createdAt", "DESC"]],
       where,
     })
   );
