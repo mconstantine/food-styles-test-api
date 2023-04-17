@@ -8,6 +8,7 @@ import { markTodoCompleted } from "./todo/markTodoCompleted";
 import { markTodoUncompleted } from "./todo/markTodoUncompleted";
 import { deleteTodo } from "./todo/deleteTodo";
 import { listTodos } from "./todo/listTodos";
+import { ServerError } from "./ServerError";
 
 const app = express();
 
@@ -58,7 +59,12 @@ app.use(express.json());
         return res.json(result);
       } catch (e) {
         console.log(e);
-        return res.status(404).end();
+
+        if (e instanceof ServerError) {
+          return res.status(e.code).end();
+        } else {
+          return res.status(500).end();
+        }
       }
     } else {
       return res.status(422).json(id.error);
@@ -74,7 +80,12 @@ app.use(express.json());
         return res.json(result);
       } catch (e) {
         console.log(e);
-        return res.status(404).end();
+
+        if (e instanceof ServerError) {
+          return res.status(e.code).end();
+        } else {
+          return res.status(500).end();
+        }
       }
     } else {
       return res.status(422).json(id.error);
@@ -90,7 +101,12 @@ app.use(express.json());
         return res.json(result);
       } catch (e) {
         console.log(e);
-        return res.status(404).end();
+
+        if (e instanceof ServerError) {
+          return res.status(e.code).end();
+        } else {
+          return res.status(500).end();
+        }
       }
     } else {
       return res.status(422).json(id.error);

@@ -1,3 +1,4 @@
+import { ServerError } from "../ServerError";
 import { createTodo } from "./createTodo";
 import { markTodoCompleted } from "./markTodoCompleted";
 import { markTodoUncompleted } from "./markTodoUncompleted";
@@ -13,7 +14,7 @@ describe("markTodoUncompleted", () => {
 
   it("should handle not found todos", async () => {
     await expect(markTodoUncompleted(4242)).rejects.toMatchObject(
-      new Error("Unable to find todo with id: 4242")
+      new ServerError(404, "Unable to find todo with id: 4242")
     );
   });
 });
