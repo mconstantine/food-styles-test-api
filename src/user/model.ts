@@ -1,11 +1,22 @@
 import z from "zod";
-import { Row } from "../withDatabase";
+import { Row, withDatabase } from "../withDatabase";
 import { DataTypes, Model, ModelStatic, Sequelize } from "sequelize";
-import { sign } from "jsonwebtoken";
+import {
+  JsonWebTokenError,
+  TokenExpiredError,
+  sign,
+  verify,
+} from "jsonwebtoken";
+import { ServerError } from "../ServerError";
 
 export interface AuthTokens {
   access: string;
   refresh: string;
+}
+
+export enum AuthTokenSubject {
+  access = "access",
+  refresh = "refresh",
 }
 
 const secret = process.env["AUTH_TOKEN_SECRET"];
@@ -48,20 +59,94 @@ export function makeAuthTokens(user: User): AuthTokens {
   const access = sign({ id: user.id }, secret!, {
     expiresIn: "14d",
     issuer: "api",
-    subject: "access",
+    subject: AuthTokenSubject.access,
   });
 
   const refresh = sign({ id: user.id }, secret!, {
     expiresIn: "1y",
     issuer: "api",
-    subject: "refresh",
+    subject: AuthTokenSubject.refresh,
   });
 
   return { access, refresh };
 }
 
-export declare function refreshToken(refreshToken: string): Promise<AuthTokens>;
+export type AuthTokenValidationResult =
+  | number
+  | "expired"
+  | "unknown_issuer"
+  | "unknown_subject"
+  | "malformed"
+  | "unknown_user";
 
-export declare function validateAuthTokens(
-  authTokens: AuthTokens
-): Promise<boolean>;
+/**
+ * Validates an auth token. If the token is valid, it returns the ID of the user the token belongs to
+ * @param token the token to be verified
+ * @param subject the subject that `token` should bare
+ * @returns the ID of the user the token belongs to, or a reason why the token is not valid
+ */
+export async function validateAuthToken(
+  token: string,
+  subject: AuthTokenSubject
+): Promise<AuthTokenValidationResult> {
+  try {
+    const accessToken = verify(token, secret!, {
+      issuer: "api",
+      subject,
+    });
+
+    if (typeof accessToken === "string") {
+      return "malformed";
+    }
+
+    if (!("id" in accessToken)) {
+      return "malformed";
+    }
+
+    const user = await withDatabase((db) =>
+      db.user.findByPk(accessToken["id"])
+    );
+
+    if (!user) {
+      return "unknown_user";
+    }
+
+    return user.dataValues.id;
+  } catch (e) {
+    if (e instanceof TokenExpiredError) {
+      return "expired";
+    } else if (e instanceof JsonWebTokenError) {
+      if (e.message.includes("issuer")) {
+        return "unknown_issuer";
+      } else if (e.message.includes("subject")) {
+        return "unknown_subject";
+      } else {
+        return "malformed";
+      }
+    } else {
+      console.log(e);
+      return "malformed";
+    }
+  }
+}
+
+export async function refreshToken(refreshToken: string): Promise<AuthTokens> {
+  const refreshTokenValidationResult = await validateAuthToken(
+    refreshToken,
+    AuthTokenSubject.refresh
+  );
+
+  if (typeof refreshTokenValidationResult !== "number") {
+    throw new ServerError(401, "Invalid refresh token");
+  }
+
+  const user = await withDatabase((db) =>
+    db.user.findByPk(refreshTokenValidationResult)
+  );
+
+  if (!user) {
+    throw new Error("a valid token was found not belonging to any user");
+  }
+
+  return makeAuthTokens(user.dataValues);
+}
