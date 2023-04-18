@@ -14,9 +14,31 @@ export type User = Row & UserInput;
 export function makeSequelizeUserModel(
   sequelize: Sequelize
 ): ModelStatic<Model<User, UserInput>> {
-  return sequelize.define("User", {
-    name: DataTypes.STRING,
-    email: DataTypes.STRING,
-    password: DataTypes.STRING,
-  });
+  return sequelize.define(
+    "User",
+    {
+      name: DataTypes.STRING,
+      email: DataTypes.STRING,
+      password: DataTypes.STRING,
+    },
+    {
+      indexes: [
+        {
+          unique: true,
+          fields: ["email"],
+        },
+      ],
+    }
+  );
 }
+
+export interface AuthTokens {
+  access: string;
+  refresh: string;
+}
+
+export declare function refreshToken(refreshToken: string): Promise<AuthTokens>;
+
+export declare function validateAuthTokens(
+  authTokens: AuthTokens
+): Promise<boolean>;
