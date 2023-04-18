@@ -1,3 +1,6 @@
+import * as dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import meta from "../package.json";
 import { withDatabase } from "./withDatabase";
