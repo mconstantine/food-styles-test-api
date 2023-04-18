@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import express from "express";
+import express, { Router } from "express";
 import meta from "../package.json";
 import { withDatabase } from "./withDatabase";
 import { TodoInput } from "./todo/model";
@@ -13,6 +13,15 @@ import { deleteTodo } from "./todo/deleteTodo";
 import { ListTodosFilter, listTodos } from "./todo/listTodos";
 import { makeEndpoint } from "./utils/makeEndpoint";
 import cors from "cors";
+import { authMiddleware } from "./utils/authMiddleware";
+import {
+  RefreshTokenInput,
+  UserInput,
+  UserLoginInput,
+  refreshToken,
+} from "./user/model";
+import { signUpUser } from "./user/signUpUser";
+import { loginUser } from "./user/loginUser";
 
 const app = express();
 
@@ -29,30 +38,58 @@ app.use(cors());
     });
   });
 
-  app.post("/todos", (req, res) => {
+  app.post("/users/signup", (req, res) => {
+    const input = UserInput.safeParse(req.body);
+
+    return makeEndpoint(input, res, (input) =>
+      signUpUser(input.name, input.email, input.password)
+    );
+  });
+
+  app.post("/users/login", (req, res) => {
+    const input = UserLoginInput.safeParse(req.body);
+
+    return makeEndpoint(input, res, (input) =>
+      loginUser(input.email, input.password)
+    );
+  });
+
+  app.post("/users/refresh-token", (req, res) => {
+    const input = RefreshTokenInput.safeParse(req.body);
+
+    return makeEndpoint(input, res, (input) =>
+      refreshToken(input.refreshToken)
+    );
+  });
+
+  const todosRouter = Router();
+  todosRouter.use(authMiddleware);
+
+  todosRouter.post("/", (req, res) => {
     const input = TodoInput.safeParse(req.body);
     return makeEndpoint(input, res, (input) => createTodo(input.title));
   });
 
-  app.get("/todos", async (req, res) => {
+  todosRouter.get("/", async (req, res) => {
     const input = ListTodosFilter.safeParse(req.query);
     return makeEndpoint(input, res, (input) => listTodos(input.filter));
   });
 
-  app.put("/todos/:id/mark-completed", (req, res) => {
+  todosRouter.put("/:id/mark-completed", (req, res) => {
     const id = z.coerce.number().int().min(1).safeParse(req.params.id);
     return makeEndpoint(id, res, markTodoCompleted);
   });
 
-  app.put("/todos/:id/mark-uncompleted", (req, res) => {
+  todosRouter.put("/:id/mark-uncompleted", (req, res) => {
     const id = z.coerce.number().int().min(1).safeParse(req.params.id);
     return makeEndpoint(id, res, markTodoUncompleted);
   });
 
-  app.delete("/todos/:id", (req, res) => {
+  todosRouter.delete("/:id", (req, res) => {
     const id = z.coerce.number().int().min(1).safeParse(req.params.id);
     return makeEndpoint(id, res, deleteTodo);
   });
 
+  app.use("/todos", todosRouter);
   app.listen(5000, () => console.log("Server ready at port 5000"));
 })();

@@ -19,12 +19,6 @@ export enum AuthTokenSubject {
   refresh = "refresh",
 }
 
-const secret = process.env["AUTH_TOKEN_SECRET"];
-
-if (!secret) {
-  throw new Error("Unable to find environment variable: AUTH_TOKEN_SECRET");
-}
-
 export const UserInput = z.object({
   name: z.string().nonempty(),
   email: z.string().email(),
@@ -33,6 +27,23 @@ export const UserInput = z.object({
 export type UserInput = z.infer<typeof UserInput>;
 
 export type User = Row & UserInput;
+
+export const UserLoginInput = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+export type UserLoginInput = z.infer<typeof UserLoginInput>;
+
+export const RefreshTokenInput = z.object({
+  refreshToken: z.string().nonempty(),
+});
+export type RefreshTokenInput = z.infer<typeof RefreshTokenInput>;
+
+const secret = process.env["AUTH_TOKEN_SECRET"];
+
+if (!secret) {
+  throw new Error("Unable to find environment variable: AUTH_TOKEN_SECRET");
+}
 
 export function makeSequelizeUserModel(
   sequelize: Sequelize
