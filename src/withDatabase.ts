@@ -1,5 +1,6 @@
 import { Model, ModelStatic, Sequelize } from "sequelize";
 import { Todo, TodoInput, makeSequelizeTodoModel } from "./todo/model";
+import { User, UserInput, makeSequelizeUserModel } from "./user/model";
 
 export interface Row {
   id: number;
@@ -9,6 +10,7 @@ export interface Row {
 
 interface DatabaseContext {
   todo: ModelStatic<Model<Todo, TodoInput>>;
+  user: ModelStatic<Model<User, UserInput>>;
 }
 
 let context: DatabaseContext | null = null;
@@ -43,9 +45,11 @@ export async function withDatabase<T>(
 
     context = {
       todo: makeSequelizeTodoModel(sequelize),
+      user: makeSequelizeUserModel(sequelize),
     };
 
     await context.todo.sync({ force: true });
+    await context.user.sync({ force: true });
   }
 
   return callback(context);
