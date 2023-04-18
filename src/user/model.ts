@@ -72,7 +72,7 @@ export function makeAuthTokens(user: User): AuthTokens {
 }
 
 export type AuthTokenValidationResult =
-  | number
+  | User
   | "expired"
   | "unknown_issuer"
   | "unknown_subject"
@@ -80,10 +80,10 @@ export type AuthTokenValidationResult =
   | "unknown_user";
 
 /**
- * Validates an auth token. If the token is valid, it returns the ID of the user the token belongs to
+ * Validates an auth token. If the token is valid, it returns the user the token belongs to
  * @param token the token to be verified
  * @param subject the subject that `token` should bare
- * @returns the ID of the user the token belongs to, or a reason why the token is not valid
+ * @returns the user the token belongs to, or a reason why the token is not valid
  */
 export async function validateAuthToken(
   token: string,
@@ -111,7 +111,7 @@ export async function validateAuthToken(
       return "unknown_user";
     }
 
-    return user.dataValues.id;
+    return user.dataValues;
   } catch (e) {
     if (e instanceof TokenExpiredError) {
       return "expired";
@@ -136,17 +136,9 @@ export async function refreshToken(refreshToken: string): Promise<AuthTokens> {
     AuthTokenSubject.refresh
   );
 
-  if (typeof refreshTokenValidationResult !== "number") {
+  if (typeof refreshTokenValidationResult === "string") {
     throw new ServerError(401, "Invalid refresh token");
   }
 
-  const user = await withDatabase((db) =>
-    db.user.findByPk(refreshTokenValidationResult)
-  );
-
-  if (!user) {
-    throw new Error("a valid token was found not belonging to any user");
-  }
-
-  return makeAuthTokens(user.dataValues);
+  return makeAuthTokens(refreshTokenValidationResult);
 }

@@ -26,7 +26,7 @@ describe("user model", () => {
         AuthTokenSubject.access
       );
 
-      expect(result).toBe(user!.dataValues.id);
+      expect(result).toEqual(user!.dataValues);
     });
 
     it("should reject expired auth tokens", async () => {
@@ -138,11 +138,11 @@ describe("user model", () => {
 
       expect(
         await validateAuthToken(newTokens.access, AuthTokenSubject.access)
-      ).toBe(user!.dataValues.id);
+      ).toEqual(user!.dataValues);
 
       expect(
         await validateAuthToken(newTokens.refresh, AuthTokenSubject.refresh)
-      ).toBe(user!.dataValues.id);
+      ).toEqual(user!.dataValues);
     });
 
     it("should handle invalid refresh tokens", async () => {
